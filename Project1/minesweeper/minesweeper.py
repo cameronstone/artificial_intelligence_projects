@@ -108,7 +108,7 @@ class Sentence():
         """
         mines = set()
         if len(self.cells) == self.count:
-            mines.append(self.cells)
+            mines.update(self.cells)
         return mines
 
     def known_safes(self):
@@ -117,7 +117,7 @@ class Sentence():
         """
         safe = set()
         if self.count == 0:
-            safe.append(self.cells)
+            safe.update(self.cells)
         return safe
 
     def mark_mine(self, cell):
@@ -165,6 +165,7 @@ class MinesweeperAI():
         to mark that cell as a mine as well.
         """
         self.mines.add(cell)
+        # MAKE A DEEPCOPY ???
         for sentence in self.knowledge:
             sentence.mark_mine(cell)
 
@@ -174,6 +175,7 @@ class MinesweeperAI():
         to mark that cell as safe as well.
         """
         self.safes.add(cell)
+        # MAKE A DEEPCOPY ???
         for sentence in self.knowledge:
             sentence.mark_safe(cell)
 
@@ -199,17 +201,16 @@ class MinesweeperAI():
         def generate_neighbors(cell):
             num_mines_removed = 0
             neighbors = set()
-            for (i, j) in cell:
-                for row in range(-1, 2):
-                    for col in range(-1, 2):
-                        new_i = i + row
-                        new_j = j + col
-                        if 0 <= new_i <= self.height - 1 and 0 <= new_i < self.height - 1:
-                            neighbors.add(new_i, new_j)
+            for row in range(-1, 2):
+                for col in range(-1, 2):
+                    new_i = cell[0] + row
+                    new_j = cell[1] + col
+                    if 0 <= new_i <= self.height - 1 and 0 <= new_i < self.height - 1:
+                        neighbors.add((new_i, new_j))
             for unit in self.moves_made:
                 if unit in neighbors:
                     neighbors.remove(unit)
-            for unit in self.safe:
+            for unit in self.safes:
                 if unit in neighbors:
                     neighbors.remove(unit)
             for unit in self.mines:
@@ -227,23 +228,22 @@ class MinesweeperAI():
             something_changed = False
 
             for sent in self.knowledge:
-                self.safes.add(sent.known_safes())
+                self.safes.update(sent.known_safes())
             
             for safe in self.safes:
-                    self.mark_safe(safe)
+                self.mark_safe(safe)
 
             for sent in self.knowledge:
-                self.mines.add(sent.known_mines())
+                self.mines.update(sent.known_mines())
 
             for mine in self.mines:
                 self.mark_mine(mine)
 
-            # deepcopy?
-            # add or just edit the existing set
+            # MAKE A DEEPCOPY ???
             for sent1 in self.knowledge:
                 for sent2 in self.knowledge:
                     if sent1 != sent2:
-                        if sent1.issubset(sent2):
+                        if sent1.cells.issubset(sent2.cells):
                             something_changed = True
                             new_sent_cells = sent2.cells - sent1.cells
                             new_sent_count = sent2.count - sent1.count
