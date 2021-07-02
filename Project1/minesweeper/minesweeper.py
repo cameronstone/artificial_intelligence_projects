@@ -193,8 +193,7 @@ class MinesweeperAI():
                if they can be inferred from existing knowledge
         """
         self.moves_made.add(cell)
-        for sent in self.knowledge:
-            sent.mark_safe(cell)
+        self.mark_safe(cell)
         self.safes.add(cell)
 
         def generate_neighbors(cell):
@@ -205,7 +204,7 @@ class MinesweeperAI():
                     for col in range(-1, 2):
                         new_i = i + row
                         new_j = j + col
-                        if -1 < new_i < self.height and -1 < new_i < self.height:
+                        if 0 <= new_i <= self.height - 1 and 0 <= new_i < self.height - 1:
                             neighbors.add(new_i, new_j)
             for unit in self.moves_made:
                 if unit in neighbors:
@@ -223,34 +222,32 @@ class MinesweeperAI():
         sentence = Sentence(cells=my_neighbors, count=count - count_reduction)
         self.knowledge.append(sentence)
 
-        sets_of_safes = set()
-        for sent in self.knowledge:
-            sets_of_safes.add(sent.known_safes())
-        
-        # knowledge_base = copy.deepcopy(self.knowledge)
-        for sent in self.knowledge:
-            for safes in sets_of_safes:
-                for safe in safes:
-                    sent.mark_safe(safe)
+        something_changed = True
+        while something_changed:
+            something_changed = False
 
-        sets_of_mines = set()
-        for sent in self.knowledge:
-            sets_of_mines.add(sent.known_mines())
+            for sent in self.knowledge:
+                self.safes.add(sent.known_safes())
+            
+            for safe in self.safes:
+                    self.mark_safe(safe)
 
-        for sent in self.knowledge:
-            for mines in sets_of_mines:
-                for mine in mines:
-                    sent.mark_mine(mine)
+            for sent in self.knowledge:
+                self.mines.add(sent.known_mines())
 
-        # deepcopy?
-        # add or just edit the existing set
-        for sent1 in self.knowledge:
-            for sent2 in self.knowledge:
-                if sent1 != sent2:
-                    if sent1.issubset(sent2):
-                        new_sent_cells = sent2.cells - sent1.cells
-                        new_sent_count = sent2.count - sent1.count
-                        self.knowledge.append(Sentence(cells=new_sent_cells, count=new_sent_count))
+            for mine in self.mines:
+                self.mark_mine(mine)
+
+            # deepcopy?
+            # add or just edit the existing set
+            for sent1 in self.knowledge:
+                for sent2 in self.knowledge:
+                    if sent1 != sent2:
+                        if sent1.issubset(sent2):
+                            something_changed = True
+                            new_sent_cells = sent2.cells - sent1.cells
+                            new_sent_count = sent2.count - sent1.count
+                            self.knowledge.append(Sentence(cells=new_sent_cells, count=new_sent_count))
 
 
     def make_safe_move(self):
@@ -262,7 +259,15 @@ class MinesweeperAI():
         This function may use the knowledge in self.mines, self.safes
         and self.moves_made, but should not modify any of those values.
         """
-        raise NotImplementedError
+        keep_trying = True
+        while keep_trying:
+            move = self.safes.pop()
+            if move is None:
+                keep_trying = False
+                return None
+            elif move not in self.moves_made:
+                keep_trying = False
+                return move
 
     def make_random_move(self):
         """
@@ -271,4 +276,13 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        raise NotImplementedError
+        available_cells = set()
+        for i in range(self.height):
+            for j in range(self.width):
+                if (i, j) not in self.moves_made and (i, j) not in self.mines:
+                    available_cells.add((i, j))
+        if len(available_cells) == 0:
+            return None
+        else:
+            move = random.choice(available_cells)
+            return move
