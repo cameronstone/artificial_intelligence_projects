@@ -165,7 +165,6 @@ class MinesweeperAI():
         to mark that cell as a mine as well.
         """
         self.mines.add(cell)
-        # MAKE A DEEPCOPY ???
         for sentence in self.knowledge:
             sentence.mark_mine(cell)
 
@@ -175,7 +174,6 @@ class MinesweeperAI():
         to mark that cell as safe as well.
         """
         self.safes.add(cell)
-        # MAKE A DEEPCOPY ???
         for sentence in self.knowledge:
             sentence.mark_safe(cell)
 
@@ -207,9 +205,9 @@ class MinesweeperAI():
                     new_j = cell[1] + col
                     if 0 <= new_i <= self.height - 1 and 0 <= new_i < self.height - 1:
                         neighbors.add((new_i, new_j))
-            for unit in self.moves_made:
-                if unit in neighbors:
-                    neighbors.remove(unit)
+            # for unit in self.moves_made:
+            #     if unit in neighbors:
+            #         neighbors.remove(unit)
             for unit in self.safes:
                 if unit in neighbors:
                     neighbors.remove(unit)
@@ -223,31 +221,37 @@ class MinesweeperAI():
         sentence = Sentence(cells=my_neighbors, count=count - count_reduction)
         self.knowledge.append(sentence)
 
-        # something_changed = True
-        # while something_changed:
-        #     something_changed = False
+        something_changed = True
+        while something_changed:
+            something_changed = False
 
-        for sent in self.knowledge:
-            self.safes.update(sent.known_safes())
-        
-        for safe in self.safes:
-            self.mark_safe(safe)
+            # Check this stuff
+            for sent in self.knowledge:
+                self.safes.update(sent.known_safes())
+            
+            for safe in self.safes:
+                self.mark_safe(safe)
 
-        for sent in self.knowledge:
-            self.mines.update(sent.known_mines())
+            for sent in self.knowledge:
+                self.mines.update(sent.known_mines())
 
-        for mine in self.mines:
-            self.mark_mine(mine)
+            for mine in self.mines:
+                self.mark_mine(mine)
 
-        # MAKE A DEEPCOPY ???
-        for sent1 in self.knowledge:
-            for sent2 in self.knowledge:
-                if sent1 != sent2:
-                    if sent1.cells.issubset(sent2.cells):
-                        new_sent_cells = sent2.cells - sent1.cells
-                        new_sent_count = sent2.count - sent1.count
-                        self.knowledge.append(Sentence(cells=new_sent_cells, count=new_sent_count))
-                        # something_changed = True
+            for (sent1, sent2) in list(itertools.permutations(self.knowledge, 2)):
+                if sent1.cells.issubset(sent2.cells):
+                            new_sent_cells = sent2.cells - sent1.cells
+                            new_sent_count = sent2.count - sent1.count
+                            self.knowledge.append(Sentence(cells=new_sent_cells, count=new_sent_count))
+                            something_changed = True
+            # for sent1 in self.knowledge:
+            #     for sent2 in self.knowledge:
+            #         if sent1 != sent2:
+            #             if sent1.cells.issubset(sent2.cells):
+            #                 new_sent_cells = sent2.cells - sent1.cells
+            #                 new_sent_count = sent2.count - sent1.count
+            #                 self.knowledge.append(Sentence(cells=new_sent_cells, count=new_sent_count))
+            #                 something_changed = True
 
 
     def make_safe_move(self):
