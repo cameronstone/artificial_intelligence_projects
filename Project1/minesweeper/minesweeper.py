@@ -223,31 +223,31 @@ class MinesweeperAI():
         sentence = Sentence(cells=my_neighbors, count=count - count_reduction)
         self.knowledge.append(sentence)
 
-        something_changed = True
-        while something_changed:
-            something_changed = False
+        # something_changed = True
+        # while something_changed:
+        #     something_changed = False
 
-            for sent in self.knowledge:
-                self.safes.update(sent.known_safes())
-            
-            for safe in self.safes:
-                self.mark_safe(safe)
+        for sent in self.knowledge:
+            self.safes.update(sent.known_safes())
+        
+        for safe in self.safes:
+            self.mark_safe(safe)
 
-            for sent in self.knowledge:
-                self.mines.update(sent.known_mines())
+        for sent in self.knowledge:
+            self.mines.update(sent.known_mines())
 
-            for mine in self.mines:
-                self.mark_mine(mine)
+        for mine in self.mines:
+            self.mark_mine(mine)
 
-            # MAKE A DEEPCOPY ???
-            for sent1 in self.knowledge:
-                for sent2 in self.knowledge:
-                    if sent1 != sent2:
-                        if sent1.cells.issubset(sent2.cells):
-                            something_changed = True
-                            new_sent_cells = sent2.cells - sent1.cells
-                            new_sent_count = sent2.count - sent1.count
-                            self.knowledge.append(Sentence(cells=new_sent_cells, count=new_sent_count))
+        # MAKE A DEEPCOPY ???
+        for sent1 in self.knowledge:
+            for sent2 in self.knowledge:
+                if sent1 != sent2:
+                    if sent1.cells.issubset(sent2.cells):
+                        new_sent_cells = sent2.cells - sent1.cells
+                        new_sent_count = sent2.count - sent1.count
+                        self.knowledge.append(Sentence(cells=new_sent_cells, count=new_sent_count))
+                        # something_changed = True
 
 
     def make_safe_move(self):
@@ -261,13 +261,13 @@ class MinesweeperAI():
         """
         keep_trying = True
         while keep_trying:
-            move = self.safes.pop()
-            if move is None:
+            if len(self.safes) == 0:
                 keep_trying = False
                 return None
-            elif move not in self.moves_made:
+            move = self.safes.pop()
+            if move not in self.moves_made:
                 keep_trying = False
-                return move
+                return move[0], move[1]
 
     def make_random_move(self):
         """
@@ -284,5 +284,5 @@ class MinesweeperAI():
         if len(available_cells) == 0:
             return None
         else:
-            move = random.choice(available_cells)
-            return move
+            move = random.sample(available_cells, 1)
+            return move[0], move[1]
