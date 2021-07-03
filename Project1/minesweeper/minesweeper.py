@@ -1,6 +1,5 @@
 import itertools
 import random
-import copy
 
 
 class Minesweeper():
@@ -194,7 +193,6 @@ class MinesweeperAI():
         """
         self.moves_made.add(cell)
         self.mark_safe(cell)
-        self.safes.add(cell)
 
         def generate_neighbors(cell):
             num_mines_removed = 0
@@ -203,7 +201,7 @@ class MinesweeperAI():
                 for col in range(-1, 2):
                     new_i = cell[0] + row
                     new_j = cell[1] + col
-                    if 0 <= new_i <= self.height - 1 and 0 <= new_i < self.height - 1:
+                    if 0 <= new_i <= self.height - 1 and 0 <= new_j <= self.width - 1:
                         neighbors.add((new_i, new_j))
             # for unit in self.moves_made:
             #     if unit in neighbors:
@@ -221,37 +219,42 @@ class MinesweeperAI():
         sentence = Sentence(cells=my_neighbors, count=count - count_reduction)
         self.knowledge.append(sentence)
 
+        # for sent in self.knowledge:
+            # print("Knowledge: ", sent.cells, sent.count)
+
         something_changed = True
         while something_changed:
             something_changed = False
 
-            # Check this stuff
+            # Update set of known safe cells
             for sent in self.knowledge:
-                self.safes.update(sent.known_safes())
-            
-            for safe in self.safes:
-                self.mark_safe(safe)
-
+                known = sent.known_safes()
+                if known != set():
+                    for cell in known:
+                        self.mark_safe(cell)
+            # Update set of known mines
             for sent in self.knowledge:
-                self.mines.update(sent.known_mines())
+                known = sent.known_mines()
+                if known != set():
+                    for cell in known:
+                        self.mark_mine(cell)
 
-            for mine in self.mines:
-                self.mark_mine(mine)
+            self.knowledge = list(filter(lambda s : s.cells != set(), self.knowledge))
+
+            # Check the new or remove the old
 
             for (sent1, sent2) in list(itertools.permutations(self.knowledge, 2)):
-                if sent1.cells.issubset(sent2.cells):
-                            new_sent_cells = sent2.cells - sent1.cells
-                            new_sent_count = sent2.count - sent1.count
-                            self.knowledge.append(Sentence(cells=new_sent_cells, count=new_sent_count))
-                            something_changed = True
-            # for sent1 in self.knowledge:
-            #     for sent2 in self.knowledge:
-            #         if sent1 != sent2:
-            #             if sent1.cells.issubset(sent2.cells):
-            #                 new_sent_cells = sent2.cells - sent1.cells
-            #                 new_sent_count = sent2.count - sent1.count
-            #                 self.knowledge.append(Sentence(cells=new_sent_cells, count=new_sent_count))
-            #                 something_changed = True
+                if sent1.cells.issubset(sent2.cells) and sent1 != sent2:
+                    new_sent_cells = sent2.cells - sent1.cells
+                    new_sent_count = sent2.count - sent1.count
+                    inference = Sentence(cells=new_sent_cells, count=new_sent_count)
+                    if inference not in self.knowledge or inference.cells == set():
+                        self.knowledge.append(inference)
+                        something_changed = True
+
+            for sent in self.knowledge:
+                print("Knowledge: ", sent.cells, sent.count)
+            print("done")
 
 
     def make_safe_move(self):
@@ -271,7 +274,7 @@ class MinesweeperAI():
             move = self.safes.pop()
             if move not in self.moves_made:
                 keep_trying = False
-                return move[0], move[1]
+                return move
 
     def make_random_move(self):
         """
@@ -289,4 +292,5 @@ class MinesweeperAI():
             return None
         else:
             move = random.sample(available_cells, 1)
-            return move[0], move[1]
+            # return move[0], move[1]
+            return move[0]
