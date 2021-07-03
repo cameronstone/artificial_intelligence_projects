@@ -12,8 +12,10 @@ CKnave = Symbol("C is a Knave")
 # Puzzle 0
 # A says "I am both a knight and a knave."
 knowledge0 = And(
-    Implication(AKnight, And(AKnight, AKnave)),
-    Implication(AKnave, Not(And(AKnight, AKnave))),
+    # Implication(AKnight, And(AKnight, AKnave)),
+    # Implication(AKnave, Not(And(AKnight, AKnave))),
+
+    Biconditional(AKnight, And(AKnight, AKnave)),
 
     # Rule: either one, but not both nor neither
     And(Or(AKnight, AKnave), Not(And(AKnight, AKnave))),
@@ -30,8 +32,10 @@ knowledge0 = And(
 # A says "We are both knaves."
 # B says nothing.
 knowledge1 = And(
-    Implication(AKnight, And(AKnave, BKnave)),
-    Implication(AKnave, Not(And(AKnave, BKnave))),
+    # Implication(AKnight, And(AKnave, BKnave)),
+    # Implication(AKnave, Not(And(AKnave, BKnave))),
+
+    Biconditional(AKnight, And(AKnave, BKnave)),
 
     # Rule: either one, but not both nor neither
     And(Or(AKnight, AKnave), Not(And(AKnight, AKnave))),
@@ -42,11 +46,15 @@ knowledge1 = And(
 # A says "We are the same kind."
 # B says "We are of different kinds."
 knowledge2 = And(
-    Implication(AKnight, Or(And(AKnave, BKnave), And(AKnight, BKnight))),
-    Implication(AKnave, Not(Or(And(AKnave, BKnave), And(AKnight, BKnight)))),
+    # Implication(AKnight, Or(And(AKnave, BKnave), And(AKnight, BKnight))),
+    # Implication(AKnave, Not(Or(And(AKnave, BKnave), And(AKnight, BKnight)))),
 
-    Implication(BKnight, Or(And(AKnight, BKnave), And(BKnight, AKnave))),
-    Implication(BKnave, Not(Or(And(AKnight, BKnave), And(BKnight, AKnave)))),
+    Biconditional(AKnight, Or(And(AKnave, BKnave), And(AKnight, BKnight))),
+
+    # Implication(BKnight, Or(And(AKnight, BKnave), And(BKnight, AKnave))),
+    # Implication(BKnave, Not(Or(And(AKnight, BKnave), And(BKnight, AKnave)))),
+
+    Biconditional(BKnight, Or(And(AKnight, BKnave), And(BKnight, AKnave))),
 
     # Rule: either one, but not both nor neither
     And(Or(AKnight, AKnave), Not(And(AKnight, AKnave))),
@@ -68,14 +76,20 @@ knowledge3 = And(
     # Implication(BKnight, And(Or(Implication(AKnight, AKnave), Implication(AKnave, Not(AKnave))), Not(And(Implication(AKnight, AKnave), Implication(AKnave, Not(AKnave)))))),
     # Implication(BKnave, Not(And(Or(Implication(AKnight, AKnave), Implication(AKnave, Not(AKnave))), Not(And(Implication(AKnight, AKnave), Implication(AKnave, Not(AKnave))))))),
 
-    Implication(BKnight, (Or(Implication(AKnight, AKnave), Implication(AKnave, Not(AKnave))))),
-    Implication(BKnave, Not(Or(Implication(AKnight, AKnave), Implication(AKnave, Not(AKnave))))),
+    Biconditional(BKnight, Biconditional(AKnight, AKnave)),
 
-    Implication(BKnight, CKnave),
-    Implication(BKnave, Not(CKnave)),
+    # Implication(BKnight, (Or(Implication(AKnight, AKnave), Implication(AKnave, Not(AKnave))))),
+    # Implication(BKnave, Not(Or(Implication(AKnight, AKnave), Implication(AKnave, Not(AKnave))))),
 
-    Implication(CKnight, AKnight),
-    Implication(CKnave, Not(AKnight)),
+    Biconditional(BKnight, CKnave),
+
+    # Implication(BKnight, CKnave),
+    # Implication(BKnave, Not(CKnave)),
+
+    Biconditional(CKnight, AKnight),
+
+    # Implication(CKnight, AKnight),
+    # Implication(CKnave, Not(AKnight)),
 
     # Rule: either one, but not both nor neither
     And(Or(AKnight, AKnave), Not(And(AKnight, AKnave))),
