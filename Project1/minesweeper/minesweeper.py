@@ -206,10 +206,10 @@ class MinesweeperAI():
             # Generate all valid neighbors
             for row in range(-1, 2):
                 for col in range(-1, 2):
-                    new_i = cell[0] + row
-                    new_j = cell[1] + col
-                    if 0 <= new_i <= self.height - 1 and 0 <= new_j <= self.width - 1:
-                        neighbors.add((new_i, new_j))
+                    i = cell[0] + row
+                    j = cell[1] + col
+                    if 0 <= i <= self.height - 1 and 0 <= j <= self.width - 1:
+                        neighbors.add((i, j))
             # Removes safes
             for unit in self.safes:
                 if unit in neighbors:
@@ -247,21 +247,22 @@ class MinesweeperAI():
                         self.mark_mine(cell)
 
             # Always filter out empty sets
-            self.knowledge = list(filter(lambda s : s.cells != set(), self.knowledge))
+            filt = filter(lambda s: s.cells != set(), self.knowledge)
+            self.knowledge = list(filt)
 
-            # Iterate through all possible combinations of sentences from knowledge base
-            for (sent1, sent2) in list(itertools.permutations(self.knowledge, 2)):
-                # When true subsets are discovered, make new inference (add knowledge)
+            # Iterate through all combinations of sentences from KB
+            combos = list(itertools.permutations(self.knowledge, 2))
+            for (sent1, sent2) in combos:
+                # When true subset, make new inference
                 if sent1.cells.issubset(sent2.cells) and sent1 != sent2:
-                    new_sent_cells = sent2.cells - sent1.cells
-                    new_sent_count = sent2.count - sent1.count
-                    inference = Sentence(cells=new_sent_cells, count=new_sent_count)
+                    new_cells = sent2.cells - sent1.cells
+                    new_count = sent2.count - sent1.count
+                    inf = Sentence(cells=new_cells, count=new_count)
                     # Make sure knowledge being added is new
-                    if inference not in self.knowledge or inference.cells == set():
-                        self.knowledge.append(inference)
-                        # Indicate change to check for other resolve-opportunities
+                    if inf not in self.knowledge or inf.cells == set():
+                        self.knowledge.append(inf)
+                        # Indicate change, try new resolves
                         something_changed = True
-
 
     def make_safe_move(self):
         """
