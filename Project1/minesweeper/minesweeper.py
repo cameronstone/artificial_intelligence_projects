@@ -106,6 +106,7 @@ class Sentence():
         Returns the set of all cells in self.cells known to be mines.
         """
         mines = set()
+        # When the cells equal the they are all mines
         if len(self.cells) == self.count:
             mines.update(self.cells)
         return mines
@@ -115,6 +116,7 @@ class Sentence():
         Returns the set of all cells in self.cells known to be safe.
         """
         safe = set()
+        # When count is 0, we know they are safe
         if self.count == 0:
             safe.update(self.cells)
         return safe
@@ -125,6 +127,7 @@ class Sentence():
         a cell is known to be a mine.
         """
         if cell in self.cells:
+            # When removing cells, also adjust the count
             self.cells.remove(cell)
             self.count = self.count - 1
 
@@ -191,37 +194,40 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
+        # Mark cell as a move made
         self.moves_made.add(cell)
+        # Mark cell as safe
         self.mark_safe(cell)
 
+        # Generates all undetermined neighbors
         def generate_neighbors(cell):
             num_mines_removed = 0
             neighbors = set()
+            # Generate all valid neighbors
             for row in range(-1, 2):
                 for col in range(-1, 2):
                     new_i = cell[0] + row
                     new_j = cell[1] + col
                     if 0 <= new_i <= self.height - 1 and 0 <= new_j <= self.width - 1:
                         neighbors.add((new_i, new_j))
-            # for unit in self.moves_made:
-            #     if unit in neighbors:
-            #         neighbors.remove(unit)
+            # Removes safes
             for unit in self.safes:
                 if unit in neighbors:
                     neighbors.remove(unit)
+            # Remove mines
             for unit in self.mines:
                 if unit in neighbors:
                     neighbors.remove(unit)
+                    # When removing mines, pass a number to adjust the count
                     num_mines_removed = num_mines_removed + 1
             return (neighbors, num_mines_removed)
 
+        # Create new sentence based off of undetermined neighbors
         (my_neighbors, count_reduction) = generate_neighbors(cell)
         sentence = Sentence(cells=my_neighbors, count=count - count_reduction)
         self.knowledge.append(sentence)
 
-        # for sent in self.knowledge:
-            # print("Knowledge: ", sent.cells, sent.count)
-
+        # Create boolean to indicate when something changed (repeat loop)
         something_changed = True
         while something_changed:
             something_changed = False
@@ -232,6 +238,7 @@ class MinesweeperAI():
                 if known != set():
                     for cell in known:
                         self.mark_safe(cell)
+
             # Update set of known mines
             for sent in self.knowledge:
                 known = sent.known_mines()
@@ -239,22 +246,21 @@ class MinesweeperAI():
                     for cell in known:
                         self.mark_mine(cell)
 
+            # Always filter out empty sets
             self.knowledge = list(filter(lambda s : s.cells != set(), self.knowledge))
 
-            # Check the new or remove the old
-
+            # Iterate through all possible combinations of sentences from knowledge base
             for (sent1, sent2) in list(itertools.permutations(self.knowledge, 2)):
+                # When true subsets are discovered, make new inference (add knowledge)
                 if sent1.cells.issubset(sent2.cells) and sent1 != sent2:
                     new_sent_cells = sent2.cells - sent1.cells
                     new_sent_count = sent2.count - sent1.count
                     inference = Sentence(cells=new_sent_cells, count=new_sent_count)
+                    # Make sure knowledge being added is new
                     if inference not in self.knowledge or inference.cells == set():
                         self.knowledge.append(inference)
+                        # Indicate change to check for other resolve-opportunities
                         something_changed = True
-
-            for sent in self.knowledge:
-                print("Knowledge: ", sent.cells, sent.count)
-            print("done")
 
 
     def make_safe_move(self):
@@ -267,10 +273,12 @@ class MinesweeperAI():
         and self.moves_made, but should not modify any of those values.
         """
         keep_trying = True
+        # Try to find a safe move
         while keep_trying:
             if len(self.safes) == 0:
                 keep_trying = False
                 return None
+            # Ensure the move hasn't already been made
             move = self.safes.pop()
             if move not in self.moves_made:
                 keep_trying = False
@@ -284,6 +292,7 @@ class MinesweeperAI():
             2) are not known to be mines
         """
         available_cells = set()
+        # Create set of all possible cells not already made
         for i in range(self.height):
             for j in range(self.width):
                 if (i, j) not in self.moves_made and (i, j) not in self.mines:
@@ -291,6 +300,6 @@ class MinesweeperAI():
         if len(available_cells) == 0:
             return None
         else:
+            # Pick random move
             move = random.sample(available_cells, 1)
-            # return move[0], move[1]
             return move[0]

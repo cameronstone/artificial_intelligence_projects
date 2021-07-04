@@ -4,6 +4,8 @@ import time
 
 from minesweeper import Minesweeper, MinesweeperAI
 
+# EXTRA RUNNER FILE I MADE (by direction of my awesome TF Chris)
+
 HEIGHT = 8
 WIDTH = 8
 MINES = 8
