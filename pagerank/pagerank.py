@@ -125,7 +125,49 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    # create dictionary to be returned
+    pageranks = {}
+    # add initial starting values of 1/N
+    all_pages = corpus.keys()
+    n = len(all_pages)
+    starting_val = 1 / n
+    for page in all_pages:
+        pageranks[page] = starting_val
+    
+    # recursive iterative algorithm
+    def iterative_algorithm(current_page, d):
+        first_term = (1 - d) / n
+        second_term = 0
+        # summation of term involving pages that link to current_page
+        for page in all_pages:
+            # find all pages that link to current_page
+            i = corpus[page]
+            # if a page has no links at all, divide evenly across all
+            if len(i) == 0:
+                num_links_i = n
+                second_term = second_term + d * iterative_algorithm(i, d) / num_links_i
+            # if a page has links, check if the current page is in it
+            elif current_page in corpus[page]:
+                num_links_i = len(corpus[i])
+                second_term = second_term + d * iterative_algorithm(i, d) / num_links_i
+        return first_term + second_term
+    
+    old_pageranks = {}
+    for page in all_pages:
+        pageranks[page] = 0
+    
+    def check_completion (current_dict, new_dict):
+        for key in current_dict.keys():
+            if abs(current_dict[key] - new_dict[key]) > 0.001:
+                return False
+        return True
+    
+    while check_completion(pageranks, old_pageranks) is False:
+        old_pageranks = pageranks
+        for page in all_pages:
+            pageranks[page] = iterative_algorithm(page, damping_factor)
+
+    return pageranks
 
 
 if __name__ == "__main__":
