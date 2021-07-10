@@ -2,6 +2,7 @@ import os
 import random
 import re
 import sys
+import copy
 
 DAMPING = 0.85
 SAMPLES = 10000
@@ -170,7 +171,7 @@ def iterate_pagerank(corpus, damping_factor):
         return True
     
     while check_completion(pageranks, old_pageranks) is False:
-        old_pageranks = pageranks
+        old_pageranks = copy.deepcopy(pageranks)
         for page in all_pages:
             pageranks[page] = iterative_algorithm(page, damping_factor)
 
