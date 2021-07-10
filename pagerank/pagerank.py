@@ -75,10 +75,10 @@ def transition_model(corpus, page, damping_factor):
         prob_linked = damping_factor / num_linked
         for linked_page in corpus[page]:
             new_dict[linked_page] = new_dict[linked_page] + prob_linked
-    # sum of probabilities in dictionary should sum to 1
-    check_total = 0
-    check_total = [check_total + num for num in new_dict.values()]
-    print("Sum of probabilities: ", check_total)
+    # # sum of probabilities in dictionary should sum to 1
+    # check_total = 0
+    # check_total = [check_total + num for num in new_dict.values()]
+    # print("Sum of probabilities: ", check_total)
     return new_dict
 
 
@@ -96,22 +96,22 @@ def sample_pagerank(corpus, damping_factor, n):
     for page in corpus.keys():
         pageranks[page] = 0
     # choose starting page at random for first iteration
-    (starting_page, _) = random.choice(corpus)
+    starting_page = random.choice(list(corpus.keys()))
     pageranks[starting_page] = pageranks[starting_page] + 1
     # temp_dict holds dictionary that helps determine next move
     temp_dict = transition_model(corpus, starting_page, damping_factor)
     # iterate through the rest of the number of desired samples
     for _ in range(n - 1):
         # based off probabilities, choose next page to move to
-        next_page = random.choices(temp_dict.keys(), weights=temp_dict.values(), k=1)[0]
+        next_page = (random.choices(list(temp_dict.keys()), weights=list(temp_dict.values()), k=1))[0]
         # add 1 to count of that page
         pageranks[next_page] = pageranks[next_page] + 1
         # reset temp_dict to new transition model
         temp_dict = transition_model(corpus, next_page, damping_factor)
     # convert numbers of counts to proportions
     total = 0
-    total = [total + num for num in pageranks.values()]
-    pageranks = {page : (count / total) for (page, count) in pageranks}
+    total = sum(pageranks.values())
+    pageranks = {page : (count / total) for (page, count) in pageranks.items()}
     # return counts in form of dictionary
     return pageranks
 
@@ -138,27 +138,34 @@ def iterate_pagerank(corpus, damping_factor):
     def iterative_algorithm(current_page, d):
         first_term = (1 - d) / n
         second_term = 0
-        # summation of term involving pages that link to current_page
+        
+        # determine which pages link to desired page and get PR and NumLinks of each
+        parent_pages = []
         for page in all_pages:
-            # find all pages that link to current_page
-            i = corpus[page]
+            # set of all outgoing links on this specific page
+            outgoing_links = corpus[page]
             # if a page has no links at all, divide evenly across all
-            if len(i) == 0:
-                num_links_i = n
-                second_term = second_term + d * iterative_algorithm(i, d) / num_links_i
-            # if a page has links, check if the current page is in it
-            elif current_page in corpus[page]:
-                num_links_i = len(corpus[i])
-                second_term = second_term + d * iterative_algorithm(i, d) / num_links_i
+            if len(outgoing_links) == 0:
+                # n is total number of pages
+                parent_pages.append((page, n))
+            elif current_page in outgoing_links:
+                parent_pages.append((page, len(outgoing_links)))
+        # now parent_pages has all pages that link to my desired page and their total links
+
+        # summation of term involving pages that link to current_page
+        for (parent, total) in parent_pages:
+            second_term = second_term + d * pageranks[parent] / total
+
         return first_term + second_term
     
+    # create dictionary to compare with new
     old_pageranks = {}
     for page in all_pages:
-        pageranks[page] = 0
+        old_pageranks[page] = 0
     
-    def check_completion (current_dict, new_dict):
+    def check_completion(current_dict, old_dict):
         for key in current_dict.keys():
-            if abs(current_dict[key] - new_dict[key]) > 0.001:
+            if abs(current_dict[key] - old_dict[key]) > 0.001:
                 return False
         return True
     
