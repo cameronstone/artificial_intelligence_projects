@@ -183,6 +183,10 @@ class CrosswordCreator():
         """
         # check that assignment dictionary has all variables
         if len(assignment.keys()) == len(self.variables):
+            # check that there is a value assigned
+            for var in assignment.keys():
+                if assignment[var] is None:
+                    return False
             return True
         # not complete
         return False
@@ -310,8 +314,36 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        raise NotImplementedError
+        # if the assignment is complete and consistent, return it
+        if self.assignment_complete(assignment):
+            if self.consistent(assignment):
+                return assignment
+        # select an unassigned variable (based on heuristics)
+        var = self.select_unassigned_variable(self, assignment)
+        # loop through every word in ascending order (based on heuristic)
+        for word in self.order_domain_values(self, var, assignment):
+            # ensure the word is not already used
+            if word not in assignment.values():
+                # add assignment
+                assignment[var] = word
+                # recursively call backtrack to see if we find solution
+                result = self.backtrack(self, assignment)
 
+
+
+
+                ########################################### is this proper checking its not failure
+                # if result is not a failure, return it
+                if result is not None:
+                    return result
+
+
+
+                    
+            # if it doesn't yield a solution, backtrack by removing assignment
+            assignment.remove(var)
+        # if we run out of variables and words to try, return None
+        return None
 
 def main():
 
