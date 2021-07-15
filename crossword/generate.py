@@ -175,20 +175,55 @@ class CrosswordCreator():
         # everything is arc consistent
         return True
 
-
     def assignment_complete(self, assignment):
         """
         Return True if `assignment` is complete (i.e., assigns a value to each
         crossword variable); return False otherwise.
         """
-        raise NotImplementedError
+        # check that assignment dictionary has all variables
+        if len(assignment.keys()) == len(self.variables):
+            return True
+        # not complete
+        return False
 
     def consistent(self, assignment):
         """
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
-        raise NotImplementedError
+        assigned_variables = assignment.keys()
+        # check that all values are distinct
+        for var1 in assigned_variables:
+            count = 0
+            for var2 in assigned_variables:
+                if var1 == var2:
+                    count += 1
+            if count != 1:
+                return False
+
+        # check the every value is correct length
+        for var in assigned_variables:
+            if self.variables[var].length != len(assigned_variables[var]):
+                return False
+
+        # check that no conflicts between neighbors exist
+        # loop through every assigned variable
+        for var in assigned_variables:
+            # loop through every neighbor of that variable
+            for neighbor in self.crossword.neighbors(var):
+                # check if that neighbor is assigned
+                if neighbor in assigned_variables:
+                    # get overlap
+                    overlap = self.crossword.overlaps[var, neighbor]
+                    if overlap is not None:
+                        # get indices of each variable's character that overlaps
+                        (index_var, index_neighbor) = overlap
+                        # check if assigned words for those variables have a conflict
+                        if assignment[var][index_var] != assignment[neighbor][index_neighbor]:
+                            return False
+
+        # passed all three constraints
+        return True
 
     def order_domain_values(self, var, assignment):
         """
@@ -197,7 +232,28 @@ class CrosswordCreator():
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-        raise NotImplementedError
+        # this dictionary will have word keys and lcv values
+        lcv_values = {}
+        unassigned_neighbors = []
+
+        # creates a list of unassigned neighbors for var
+        for neighbor in self.crossword.neighbors(var):
+            if neighbor not in assignment.keys():
+                unassigned_neighbors.append(neighbor)
+
+        # loop through every word in var's domain
+        for word in var.domains:
+            lcv = 0
+            # count every neighbor whose word would get ruled out
+            for neighbor in unassigned_neighbors:
+                if word in neighbor.domains:
+                    lcv += 1
+            # add that lcv value paired with the key as the word
+            lcv_values[word] = lcv
+
+        # sort dictionary by ascending lcv value
+        sorted_lcv = dict(sorted(lcv_values.items(), key= lambda word: word[1]))
+        return sorted_lcv.keys()
 
     def select_unassigned_variable(self, assignment):
         """
