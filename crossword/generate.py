@@ -1,4 +1,5 @@
 import sys
+import random
 
 from crossword import *
 
@@ -263,7 +264,42 @@ class CrosswordCreator():
         degree. If there is a tie, any of the tied variables are acceptable
         return values.
         """
-        raise NotImplementedError
+        # find available, unassigned variables
+        available_variables = self.variables.difference(assignment.keys())
+        # set min_length tracker to an initial value
+        min_length = available_variables[0].domains.size()
+        min_var = []
+        # loop through all available variables
+        for var in available_variables:
+            # if a tie, append
+            if var.domains.size() == min_length:
+                min_var.append(var)
+            # if new minimum, reset list to single variable
+            elif var.domains.size() < min_length:
+                min_var = [var]
+        # if there is a variable with minimum remaining values, return it
+        if len(min_var) == 1:
+            return min_var[0]
+        # if there is a tie for minimum remaining values, check degree 
+        else:
+            # create counter for current max number of neighbors
+            max_neighbors = 0
+            most_neighbors = []
+            # loop through each variable in the tie
+            for var in min_var:
+                num_neighbors = (self.crossword.neighbors(var)).size()
+                # if its number of neighbors matches current max, append
+                if num_neighbors == max_neighbors:
+                    most_neighbors.append(var)
+                # if it is outright newest max, reset to single variable
+                elif num_neighbors > max_neighbors:
+                    most_neighbors = [var]
+            # if there is a variable with the highest degree, return it
+            if len(most_neighbors) == 1:
+                return most_neighbors[0]
+            # there is a tie in variables with highest degree, return random
+            else:
+                return random.choice(most_neighbors)
 
     def backtrack(self, assignment):
         """
