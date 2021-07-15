@@ -1,5 +1,6 @@
 import sys
 import random
+import copy
 
 from crossword import *
 
@@ -100,13 +101,16 @@ class CrosswordCreator():
         (Remove any values that are inconsistent with a variable's unary
          constraints; in this case, the length of the word.)
         """
+        # create a copy to apply changes to
+        domains_copy = copy.deepcopy(self.domains)
         # loop through all variables in domains dict
         for var in self.domains.keys():
             # loop through all words in that dict key's values
             for word in self.domains[var]:
                 # if word doesn't match the variable's length, remove
                 if var.length != len(word):
-                    self.domains[var].remove(word)
+                    domains_copy[var].remove(word)
+        self.domains = domains_copy
 
     def revise(self, x, y):
         """
@@ -125,20 +129,20 @@ class CrosswordCreator():
             # get indices of each variable's character that overlaps
             (index_x, index_y) = overlap
             # make a copy of x_domains to apply changes
-            x_domains_copy = x.domains.copy()
+            x_domains_copy = copy.deepcopy(self.domains[x])
             # loop through every possible value of x
-            for word_x in x.domains:
+            for word_x in self.domains[x]:
                 word_available = False
                 # loop through every possible value of y
-                for word_y in y.domains:
+                for word_y in self.domains[y]:
                     # if y has a viable option, indicate it
                     if word_x[index_x] == word_y[index_y]:
                         word_available = True
                 # if no words in y are viable, remove from x's domain
                 if not word_available:
-                    x_domains_copy.remove[word_x]
+                    x_domains_copy.remove(word_x)
                     revision = True
-            x.domains = x_domains_copy
+            self.domains[x] = x_domains_copy
         return revision
 
     def ac3(self, arcs=None):
@@ -153,20 +157,20 @@ class CrosswordCreator():
         # if arcs is None, add all possible arcs
         if arcs is None:
             queue = []
-            for v1 in self.variables:
-                for v2 in self.variables:
+            for v1 in self.crossword.variables:
+                for v2 in self.crossword.variables:
                     if v1 != v2:
                         queue.append((v1, v2))
         # otherwise, use arcs as initial queue
         else:
             queue = arcs
         # loop until the queue is empty
-        while queue is not []:
+        while queue != []:
             # make one arc consistent at a time
             (x, y) = queue.pop(0)
-            if self.revise(self, x, y):
+            if self.revise(x, y):
                 # if a variable's domain is reduced to 0, no solution
-                if x.domains.size() == 0:
+                if len(self.domains[x]) == 0:
                     return False
                 # is a revision was made, add all neighbors but y to queue
                 else:
@@ -182,7 +186,7 @@ class CrosswordCreator():
         crossword variable); return False otherwise.
         """
         # check that assignment dictionary has all variables
-        if len(assignment.keys()) == len(self.variables):
+        if len(assignment.keys()) == len(self.crossword.variables):
             # check that there is a value assigned
             for var in assignment.keys():
                 if assignment[var] is None:
@@ -208,7 +212,7 @@ class CrosswordCreator():
 
         # check the every value is correct length
         for var in assigned_variables:
-            if self.variables[var].length != len(assigned_variables[var]):
+            if len(self.domains[var]) != len(assignment[var]):
                 return False
 
         # check that no conflicts between neighbors exist
@@ -247,11 +251,11 @@ class CrosswordCreator():
                 unassigned_neighbors.append(neighbor)
 
         # loop through every word in var's domain
-        for word in var.domains:
+        for word in self.domains[var]:
             lcv = 0
             # count every neighbor whose word would get ruled out
             for neighbor in unassigned_neighbors:
-                if word in neighbor.domains:
+                if word in self.domains[neighbor]:
                     lcv += 1
             # add that lcv value paired with the key as the word
             lcv_values[word] = lcv
@@ -269,17 +273,18 @@ class CrosswordCreator():
         return values.
         """
         # find available, unassigned variables
-        available_variables = self.variables.difference(assignment.keys())
+        available_variables = self.crossword.variables.difference(assignment.keys())
         # set min_length tracker to an initial value
-        min_length = available_variables[0].domains.size()
-        min_var = []
+        first_var = available_variables.pop()
+        min_length = len(self.domains[first_var])
+        min_var = [first_var]
         # loop through all available variables
         for var in available_variables:
             # if a tie, append
-            if var.domains.size() == min_length:
+            if len(self.domains[var]) == min_length:
                 min_var.append(var)
             # if new minimum, reset list to single variable
-            elif var.domains.size() < min_length:
+            elif len(self.domains[var]) < min_length:
                 min_var = [var]
         # if there is a variable with minimum remaining values, return it
         if len(min_var) == 1:
@@ -291,7 +296,7 @@ class CrosswordCreator():
             most_neighbors = []
             # loop through each variable in the tie
             for var in min_var:
-                num_neighbors = (self.crossword.neighbors(var)).size()
+                num_neighbors = len(self.crossword.neighbors(var))
                 # if its number of neighbors matches current max, append
                 if num_neighbors == max_neighbors:
                     most_neighbors.append(var)
@@ -314,21 +319,30 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        # if the assignment is complete and consistent, return it
-        if self.assignment_complete(assignment):
-            if self.consistent(assignment):
-                return assignment
         # select an unassigned variable (based on heuristics)
-        var = self.select_unassigned_variable(self, assignment)
+        var = self.select_unassigned_variable(assignment)
         # loop through every word in ascending order (based on heuristic)
-        for word in self.order_domain_values(self, var, assignment):
+        for word in self.order_domain_values(var, assignment):
             # ensure the word is not already used
             if word not in assignment.values():
                 # add assignment
                 assignment[var] = word
-                # recursively call backtrack to see if we find solution
-                result = self.backtrack(self, assignment)
 
+
+
+                ###################################### Unsure if this is right
+                # if the assignment is complete and consistent, return it
+                if self.assignment_complete(assignment):
+                    if self.consistent(assignment):
+                        return assignment
+
+
+                # IT IS PASSING ASSIGNMENT THROUGH BACKTRACK AGAIN EVEN THOUGH ITS FULLY ASSIGNED
+                # CHECK MY ASSIGNMENT_COMPLETE AND CONSISTENT functions
+
+
+                # recursively call backtrack to see if we find solution
+                result = self.backtrack(assignment)
 
 
 
@@ -339,7 +353,7 @@ class CrosswordCreator():
 
 
 
-                    
+
             # if it doesn't yield a solution, backtrack by removing assignment
             assignment.remove(var)
         # if we run out of variables and words to try, return None
