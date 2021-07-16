@@ -319,43 +319,31 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
+        # if the assignment is complete and consistent, return it
+        if self.assignment_complete(assignment):
+            if self.consistent(assignment):
+                return assignment
         # select an unassigned variable (based on heuristics)
         var = self.select_unassigned_variable(assignment)
         # loop through every word in ascending order (based on heuristic)
         for word in self.order_domain_values(var, assignment):
             # ensure the word is not already used
             if word not in assignment.values():
-                # add assignment
-                assignment[var] = word
+                # add assignment to COPY
+                new_assignment = copy.deepcopy(assignment)
+                new_assignment[var] = word
+                if self.consistent(new_assignment):
+                    # use ac3 on neighbors if I want to use inference
 
+                    # recursively call backtrack to see if we find solution
+                    result = self.backtrack(new_assignment)
 
+                    # if result is not a failure, return it
+                    if result is not None:
+                        return result
 
-                ###################################### Unsure if this is right
-                # if the assignment is complete and consistent, return it
-                if self.assignment_complete(assignment):
-                    if self.consistent(assignment):
-                        return assignment
-
-
-                # IT IS PASSING ASSIGNMENT THROUGH BACKTRACK AGAIN EVEN THOUGH ITS FULLY ASSIGNED
-                # CHECK MY ASSIGNMENT_COMPLETE AND CONSISTENT functions
-
-
-                # recursively call backtrack to see if we find solution
-                result = self.backtrack(assignment)
-
-
-
-                ########################################### is this proper checking its not failure
-                # if result is not a failure, return it
-                if result is not None:
-                    return result
-
-
-
-
-            # if it doesn't yield a solution, backtrack by removing assignment
-            assignment.remove(var)
+                # if it doesn't yield a solution, backtrack by removing assignment
+                new_assignment.popitem()
         # if we run out of variables and words to try, return None
         return None
 
