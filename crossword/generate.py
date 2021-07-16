@@ -212,7 +212,7 @@ class CrosswordCreator():
 
         # check the every value is correct length
         for var in assigned_variables:
-            if len(self.domains[var]) != len(assignment[var]):
+            if var.length != len(assignment[var]):
                 return False
 
         # check that no conflicts between neighbors exist
@@ -230,7 +230,6 @@ class CrosswordCreator():
                         # check if assigned words for those variables have a conflict
                         if assignment[var][index_var] != assignment[neighbor][index_neighbor]:
                             return False
-
         # passed all three constraints
         return True
 
@@ -319,22 +318,26 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
+        print(assignment)
         # if the assignment is complete and consistent, return it
         if self.assignment_complete(assignment):
             if self.consistent(assignment):
                 return assignment
         # select an unassigned variable (based on heuristics)
         var = self.select_unassigned_variable(assignment)
+        print(var)
         # loop through every word in ascending order (based on heuristic)
         for word in self.order_domain_values(var, assignment):
+            print(word)
             # ensure the word is not already used
             if word not in assignment.values():
+                print("made it")
                 # add assignment to COPY
                 new_assignment = copy.deepcopy(assignment)
                 new_assignment[var] = word
                 if self.consistent(new_assignment):
                     # use ac3 on neighbors if I want to use inference
-
+                    print("New assignment", new_assignment)
                     # recursively call backtrack to see if we find solution
                     result = self.backtrack(new_assignment)
 
