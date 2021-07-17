@@ -210,7 +210,7 @@ class CrosswordCreator():
                     count += 1
             if count != 1:
                 return False
-        
+
         assigned_variables = assignment.keys()
         # check the every value is correct length
         for var in assigned_variables:
@@ -227,10 +227,12 @@ class CrosswordCreator():
                     # get overlap
                     overlap = self.crossword.overlaps[var, neighbor]
                     if overlap is not None:
-                        # get indices of each variable's character that overlaps
+                        # get indices of each var's char that overlaps
                         (index_var, index_neighbor) = overlap
-                        # check if assigned words for those variables have a conflict
-                        if assignment[var][index_var] != assignment[neighbor][index_neighbor]:
+                        # check assigned words of those vars for conflict
+                        var_char = assignment[var][index_var]
+                        neighbor_char = assignment[neighbor][index_neighbor]
+                        if var_char != neighbor_char:
                             return False
         # passed all three constraints
         return True
@@ -262,7 +264,7 @@ class CrosswordCreator():
             lcv_values[word] = lcv
 
         # sort dictionary by ascending lcv value
-        sorted_lcv = dict(sorted(lcv_values.items(), key= lambda word: word[1]))
+        sorted_lcv = dict(sorted(lcv_values.items(), key=lambda word: word[1]))
         return sorted_lcv.keys()
 
     def select_unassigned_variable(self, assignment):
@@ -274,7 +276,8 @@ class CrosswordCreator():
         return values.
         """
         # find available, unassigned variables
-        available_variables = self.crossword.variables.difference(assignment.keys())
+        diff = self.crossword.variables.difference(assignment.keys())
+        available_variables = diff
         # set min_length tracker to an initial value
         first_var = available_variables.pop()
         min_length = len(self.domains[first_var])
@@ -290,7 +293,7 @@ class CrosswordCreator():
         # if there is a variable with minimum remaining values, return it
         if len(min_var) == 1:
             return min_var[0]
-        # if there is a tie for minimum remaining values, check degree 
+        # if there tie for minimum remaining values, use degree
         else:
             # create counter for current max number of neighbors
             max_neighbors = 0
@@ -329,39 +332,42 @@ class CrosswordCreator():
         # loop through every word in ascending order (based on heuristic)
         for word in self.order_domain_values(var, assignment):
 
-                # add assignment to COPY
-                new_assignment = copy.deepcopy(assignment)
-                new_assignment[var] = word
+            # add assignment to COPY
+            new_assignment = copy.deepcopy(assignment)
+            new_assignment[var] = word
+
+            # ensure the word is not already used
+            if self.consistent(new_assignment):
+
                 # allow for rewind of ac3's affects
                 domain = copy.deepcopy(self.domains)
 
-                # ensure the word is not already used
-                if self.consistent(new_assignment):
+                # creates inferences
+                neighbors = self.crossword.neighbors(var)
+                arcs = []
+                for neighbor in neighbors:
+                    arcs.append((neighbor, var))
+                inferences = self.ac3(arcs)
 
-                    # creates inferences
-                    neighbors = self.crossword.neighbors(var)
-                    arcs = []
-                    for neighbor in neighbors:
-                        arcs.append((neighbor, var))
-                    inferences = self.ac3(arcs)
+                # adds inferences to assignment (if consistent)
+                if inferences:
 
-                    # adds inferences to assignment (if consistent)
-                    if inferences:
+                    # recursively call backtrack to see if we find solution
+                    result = self.backtrack(new_assignment)
 
-                        # recursively call backtrack to see if we find solution
-                        result = self.backtrack(new_assignment)
-
-                        # if result is not a failure, return it
-                        if result is not None:
-                            return result
-
-                # if it doesn't yield a solution, backtrack by removing assignment
-                new_assignment.popitem()
+                    # if result is not a failure, return it
+                    if result is not None:
+                        return result
+                
                 # removes inferences from assignment
                 self.domains = domain
 
+            # if it doesn't yield a solution, backtrack by removing assignment
+            new_assignment.popitem()
+
         # if we run out of variables and words to try, return None
         return None
+
 
 def main():
 
