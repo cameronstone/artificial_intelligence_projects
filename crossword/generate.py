@@ -358,7 +358,7 @@ class CrosswordCreator():
                     # if result is not a failure, return it
                     if result is not None:
                         return result
-                
+
                 # removes inferences from assignment
                 self.domains = domain
 
