@@ -200,16 +200,18 @@ class CrosswordCreator():
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
-        assigned_variables = assignment.keys()
+        assigned_words = assignment.values()
+
         # check that all values are distinct
-        for var1 in assigned_variables:
+        for var1 in assigned_words:
             count = 0
-            for var2 in assigned_variables:
+            for var2 in assigned_words:
                 if var1 == var2:
                     count += 1
             if count != 1:
                 return False
-
+        
+        assigned_variables = assignment.keys()
         # check the every value is correct length
         for var in assigned_variables:
             if var.length != len(assignment[var]):
@@ -318,35 +320,46 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        print(assignment)
         # if the assignment is complete and consistent, return it
         if self.assignment_complete(assignment):
             if self.consistent(assignment):
                 return assignment
         # select an unassigned variable (based on heuristics)
         var = self.select_unassigned_variable(assignment)
-        print(var)
         # loop through every word in ascending order (based on heuristic)
         for word in self.order_domain_values(var, assignment):
-            print(word)
-            # ensure the word is not already used
-            if word not in assignment.values():
-                print("made it")
+
                 # add assignment to COPY
                 new_assignment = copy.deepcopy(assignment)
                 new_assignment[var] = word
-                if self.consistent(new_assignment):
-                    # use ac3 on neighbors if I want to use inference
-                    print("New assignment", new_assignment)
-                    # recursively call backtrack to see if we find solution
-                    result = self.backtrack(new_assignment)
+                # allow for rewind of ac3's affects
+                domain = copy.deepcopy(self.domains)
 
-                    # if result is not a failure, return it
-                    if result is not None:
-                        return result
+                # ensure the word is not already used
+                if self.consistent(new_assignment):
+
+                    # creates inferences
+                    neighbors = self.crossword.neighbors(var)
+                    arcs = []
+                    for neighbor in neighbors:
+                        arcs.append((neighbor, var))
+                    inferences = self.ac3(arcs)
+
+                    # adds inferences to assignment (if consistent)
+                    if inferences:
+
+                        # recursively call backtrack to see if we find solution
+                        result = self.backtrack(new_assignment)
+
+                        # if result is not a failure, return it
+                        if result is not None:
+                            return result
 
                 # if it doesn't yield a solution, backtrack by removing assignment
                 new_assignment.popitem()
+                # removes inferences from assignment
+                self.domains = domain
+
         # if we run out of variables and words to try, return None
         return None
 
