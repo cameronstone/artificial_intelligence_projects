@@ -16,7 +16,6 @@ def main():
 
     # Load data from spreadsheet and split into train and test sets
     evidence, labels = load_data(sys.argv[1])
-    print(evidence[0:5])
     X_train, X_test, y_train, y_test = train_test_split(
         evidence, labels, test_size=TEST_SIZE
     )
@@ -61,8 +60,10 @@ def load_data(filename):
     labels should be the corresponding list of labels, where each label
     is 1 if Revenue is true, and 0 otherwise.
     """
+    # convert csv to pandas dataframe
     df = pd.read_csv(filename)
 
+    # helper function to assign month integer val
     def convert_month(month):
         if month == "Jan":
             return 0
@@ -88,47 +89,56 @@ def load_data(filename):
             return 10
         else:
             return 11
-        
+
+    # helper function to assign visitor integer val
     def convert_visitor(visitor):
         if visitor == "Returning_Visitor":
             return 1
         else:
             return 0
-    
+
+    # helper function to assign weekend integer val
     def convert_weekend(weekend):
         if weekend:
             return 1
         else:
             return 0
 
+    # helper function to assign 'labels' integer val
     def convert_revenue(revenue):
         if revenue:
             return 1
         else:
             return 0
 
+    # convert columns to proper data types using lambda func
     df['Month'] = df.Month.apply(lambda row: convert_month(row))
     df['VisitorType'] = df.VisitorType.apply(lambda row: convert_visitor(row))
     df['Weekend'] = df.Weekend.apply(lambda row: convert_weekend(row))
     df['Revenue'] = df.Revenue.apply(lambda row: convert_revenue(row))
 
-    # df.to_csv(r'/Users/cameron/Desktop/artificial_intelligence_projects/shopping/test.csv')
-
+    # create labels list
     labels = df.Revenue.values.tolist()
+    # drop from dataframe to create evidence list
     df = df.drop(columns=['Revenue'])
 
-    # convert column by column to preserve data types (StackOverflow)
+    # convert by column to preserve dtypes (StackOverflow)
     evidence = [df[col].values.tolist() for col in df.columns]
     evidence = list(list(col) for col in zip(*evidence))
 
     return (evidence, labels)
+
 
 def train_model(evidence, labels):
     """
     Given a list of evidence lists and a list of labels, return a
     fitted k-nearest neighbor model (k=1) trained on the data.
     """
-    raise NotImplementedError
+    # create KNN model with k=1
+    model = KNeighborsClassifier(n_neighbors=1)
+    # fit model to training data
+    model = model.fit(evidence, labels)
+    return model
 
 
 def evaluate(labels, predictions):
@@ -146,7 +156,31 @@ def evaluate(labels, predictions):
     representing the "true negative rate": the proportion of
     actual negative labels that were accurately identified.
     """
-    raise NotImplementedError
+    # count total actual positives/negatives
+    total_positive = 0
+    total_negative = 0
+    # count total correctly identified pos/neg
+    correct_pos_prediction = 0
+    correct_neg_prediction = 0
+    # loop through every indice in labels
+    for i in range(len(labels)):
+        # identify actual positives
+        if labels[i] == 1:
+            total_positive += 1
+            # identify correctly predicted positives
+            if predictions[i] == 1:
+                correct_pos_prediction += 1
+        # identify actual negatives
+        else:
+            total_negative += 1
+            # identify correctly predicted negatives
+            if predictions[i] == 0:
+                correct_neg_prediction += 1
+    # sensitivity shows true positive rate
+    sensitivity = correct_pos_prediction / total_positive
+    # specificty shows true negative rate
+    specificity = correct_neg_prediction / total_negative
+    return (sensitivity, specificity)
 
 
 if __name__ == "__main__":
