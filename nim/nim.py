@@ -1,6 +1,7 @@
 import math
 import random
 import time
+import numpy as np
 
 
 class Nim():
@@ -101,7 +102,15 @@ class NimAI():
         Return the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
         """
-        raise NotImplementedError
+        # cast state as a tuple
+        # request value from dictionary given (s,a) key
+        q_val = self.q[(tuple(state), action)]
+        # if no q value exists return 0
+        if q_val is None:
+            return 0
+        # if q value exists return it
+        else:
+            return q_val
 
     def update_q_value(self, state, action, old_q, reward, future_rewards):
         """
@@ -118,7 +127,12 @@ class NimAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         """
-        raise NotImplementedError
+        # create new value estimate
+        new_val_est = reward + future_rewards
+        # find updated q value given formula
+        updated_q = old_q + self.alpha * (new_val_est - old_q)
+        # update (s,a) key with new updated value pair
+        self.q[tuple(state), action] = updated_q
 
     def best_future_reward(self, state):
         """
@@ -130,7 +144,27 @@ class NimAI():
         Q-value in `self.q`. If there are no available actions in
         `state`, return 0.
         """
-        raise NotImplementedError
+        # get set of all possible actions from state
+        possible_actions = Nim.available_actions(state)
+        # create variable to hold best current reward
+        best_reward = -1
+        # if no actions available, return 0
+        if len(possible_actions) == 0:
+            return 0
+        # loop through all possible actions
+        while possible_actions != {}:
+            # get a single action
+            action = possible_actions.pop()
+            # get reward from dict using (s,a) key
+            reward = self.q[tuple(state), action]
+            # if no reward exists in our dict, assume 0
+            if reward is None:
+                reward = 0
+            # if reward is better than our best, reset best
+            if reward > best_reward:
+                best_reward = reward
+        # return best possible future reward
+        return best_reward
 
     def choose_action(self, state, epsilon=True):
         """
@@ -147,7 +181,37 @@ class NimAI():
         If multiple actions have the same Q-value, any of those
         options is an acceptable return value.
         """
-        raise NotImplementedError
+        # get all possible actions
+        possible_actions = Nim.available_actions(state)
+        # if epsilon is False
+        if not epsilon:
+            # get best known possible reward for this state
+            best_reward = self.best_future_reward(state)
+            # loop through all possible actions
+            while possible_actions != {}:
+                # get action, and associated q_val
+                action = possible_actions.pop()
+                q_val = self.q[tuple(state), action]
+                # if q_val equals our best possible reward
+                if q_val is not None:
+                    if q_val == best_reward:
+                        # return the action that got us that best_reward
+                        return action
+            # if for all possible actions dict had no q, return 0
+            return 0
+        # if epsilon is True
+        else:
+            # select random number to determine probability
+            random_num = round(random.uniform(0.00,1.00), 2)
+            # if random number falls within epsilon's prob
+            if random_num <= epsilon:
+                # choose random element
+                element = random.sample(possible_actions, 1)[0]
+                return element
+            # follow traditional greedy algorithm
+            else:
+                # call function again but with epsilon=False
+                return self.choose_action(state,False)
 
 
 def train(n):
