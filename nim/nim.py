@@ -104,7 +104,7 @@ class NimAI():
         """
         # cast state as a tuple
         # request value from dictionary given (s,a) key
-        q_val = self.q[(tuple(state), action)]
+        q_val = self.q.get((tuple(state), action))
         # if no q value exists return 0
         if q_val is None:
             return 0
@@ -152,11 +152,11 @@ class NimAI():
         if len(possible_actions) == 0:
             return 0
         # loop through all possible actions
-        while possible_actions != {}:
+        while len(possible_actions) != 0:
             # get a single action
             action = possible_actions.pop()
             # get reward from dict using (s,a) key
-            reward = self.q[tuple(state), action]
+            reward = self.q.get((tuple(state), action))
             # if no reward exists in our dict, assume 0
             if reward is None:
                 reward = 0
@@ -188,10 +188,10 @@ class NimAI():
             # get best known possible reward for this state
             best_reward = self.best_future_reward(state)
             # loop through all possible actions
-            while possible_actions != {}:
+            while len(possible_actions) != 0:
                 # get action, and associated q_val
                 action = possible_actions.pop()
-                q_val = self.q[tuple(state), action]
+                q_val = self.q.get((tuple(state), action))
                 # if q_val equals our best possible reward
                 if q_val is not None:
                     if q_val == best_reward:
