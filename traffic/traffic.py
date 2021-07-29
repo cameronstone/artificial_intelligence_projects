@@ -97,7 +97,7 @@ def get_model():
 
     # create convolutional neural network
     model = tf.keras.models.Sequential([
-    
+
     # convolutional layer (learn 43 filters)
     tf.keras.layers.Conv2D(
         43, (3,3), activation='relu', input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)
@@ -110,8 +110,12 @@ def get_model():
     tf.keras.layers.Flatten(),
 
     # add hidden layer with dropout
+    tf.keras.layers.Dense(256, activation='relu'),
+    tf.keras.layers.Dropout(0.1),
+
+    # add hidden layer with dropout
     tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dropout(0.5),
+    tf.keras.layers.Dropout(0.1),
 
     # add output layer with all 43 street signs
     tf.keras.layers.Dense(43, activation='softmax')
