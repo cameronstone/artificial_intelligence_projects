@@ -6,8 +6,6 @@ import tensorflow as tf
 
 from sklearn.model_selection import train_test_split
 
-# my pathname /Users/cameron/Desktop/artificial_intelligence_projects/gtsrb
-
 EPOCHS = 10
 IMG_WIDTH = 30
 IMG_HEIGHT = 30
@@ -60,7 +58,9 @@ def load_data(data_dir):
     be a list of integer labels, representing the categories for each of the
     corresponding `images`.
     """
-    
+
+    # my pathname /Users/cameron/Desktop/artificial_intelligence_projects/gtsrb
+
     # create lists to hold data
     images = []
     labels = []
@@ -83,6 +83,7 @@ def load_data(data_dir):
             # add proper image and label to lists
             images.append(resized_image)
             labels.append(category_directory)
+            print(category_directory)
 
     # return tuple of resized images and their labels
     return (images, labels)
@@ -93,7 +94,37 @@ def get_model():
     `input_shape` of the first layer is `(IMG_WIDTH, IMG_HEIGHT, 3)`.
     The output layer should have `NUM_CATEGORIES` units, one for each category.
     """
-    raise NotImplementedError
+
+    # create convolutional neural network
+    model = tf.keras.models.Sequential([
+    
+    # convolutional layer (learn 43 filters)
+    tf.keras.layers.Conv2D(
+        43, (3,3), activation='relu', input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)
+    ),
+
+    # max-pooling layer
+    tf.keras.layers.MaxPooling2D(pool_size=(2,2)),
+
+    # flatten units
+    tf.keras.layers.Flatten(),
+
+    # add hidden layer with dropout
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dropout(0.5),
+
+    # add output layer with all 43 street signs
+    tf.keras.layers.Dense(43, activation='softmax')
+
+    ])
+
+    model.compile(
+        optimizer='adam',
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    return model
 
 
 if __name__ == "__main__":
