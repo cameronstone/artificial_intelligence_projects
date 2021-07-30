@@ -59,8 +59,6 @@ def load_data(data_dir):
     corresponding `images`.
     """
 
-    # my pathname /Users/cameron/Desktop/artificial_intelligence_projects/gtsrb
-
     # create lists to hold data
     images = []
     labels = []
@@ -83,10 +81,10 @@ def load_data(data_dir):
             # add proper image and label to lists
             images.append(resized_image)
             labels.append(category_directory)
-            print(category_directory)
 
     # return tuple of resized images and their labels
     return (images, labels)
+
 
 def get_model():
     """
@@ -98,30 +96,32 @@ def get_model():
     # create convolutional neural network
     model = tf.keras.models.Sequential([
 
-    # convolutional layer (learn 43 filters)
-    tf.keras.layers.Conv2D(
-        43, (3,3), activation='relu', input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)
-    ),
+        # convolutional layer learns 43 filters
+        tf.keras.layers.Conv2D(
+            43, (3, 3), activation='relu',
+            input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)
+        ),
 
-    # max-pooling layer
-    tf.keras.layers.MaxPooling2D(pool_size=(2,2)),
+        # max-pooling layer
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
 
-    # flatten units
-    tf.keras.layers.Flatten(),
+        # flatten units
+        tf.keras.layers.Flatten(),
 
-    # add hidden layer with dropout
-    tf.keras.layers.Dense(256, activation='relu'),
-    tf.keras.layers.Dropout(0.1),
+        # add hidden layer with dropout
+        tf.keras.layers.Dense(256, activation='relu'),
+        tf.keras.layers.Dropout(0.1),
 
-    # add hidden layer with dropout
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dropout(0.1),
+        # add hidden layer with dropout
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dropout(0.1),
 
-    # add output layer with all 43 street signs
-    tf.keras.layers.Dense(43, activation='softmax')
+        # add output layer with all 43 street signs
+        tf.keras.layers.Dense(43, activation='softmax')
 
     ])
 
+    # similar to handwriting NN from class
     model.compile(
         optimizer='adam',
         loss='categorical_crossentropy',
