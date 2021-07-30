@@ -63,9 +63,9 @@ def load_data(data_dir):
     images = []
     labels = []
 
+    # TF Carloyn said solutions didn't include this.
     # make sure it is platform independent
     data_dir = data_dir.replace('/', os.sep)
-    # IS THIS CORRECT FOR WINDOWS? I don't have one.
     data_dir = data_dir.replace('\\', os.sep)
 
     # get all 43 category directories
