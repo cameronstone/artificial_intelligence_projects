@@ -16,6 +16,15 @@ V -> "arrived" | "came" | "chuckled" | "had" | "lit" | "said" | "sat"
 V -> "smiled" | "tell" | "were"
 """
 
+#
+#
+#
+# HOW TO AVOID "the the armchair"
+# but get "the little red armchair"
+# create new DP -> Adj NP ?????
+#
+#
+
 NONTERMINALS = """
 S -> NP VP
 NP -> N | Adj NP | Det NP | NP Conj NP | NP PP
@@ -88,6 +97,12 @@ def preprocess(sentence):
     return words
 
 
+#
+#
+#
+# how to get the DET word in with the Noun Phrase Chunk
+#
+#
 def np_chunk(tree):
     """
     Return a list of all noun phrase chunks in the sentence tree.
@@ -105,8 +120,11 @@ def np_chunk(tree):
         if subs == []:
             # check if it is a Noun Phrase
             if tree.label() == 'NP':
-                # if so, append noun phrase chunk
-                noun_phrases.append(tree)
+                # avoid duplicates
+                phrases = set(np.unique(noun_phrases))
+                if str(tree.leaves()[0]) not in phrases:
+                    # if so, append noun phrase chunk
+                    noun_phrases.append(tree)
         else:
             # pass all subtrees through helper func
             for sub in subs:
@@ -117,7 +135,7 @@ def np_chunk(tree):
         get_np(tree)
     
     # remove duplicates
-    return np.unique(noun_phrases).tolist()
+    return noun_phrases
 
 
 if __name__ == "__main__":
