@@ -1,5 +1,4 @@
 import nltk
-nltk.download('punkt')
 import sys
 import numpy as np
 
@@ -16,20 +15,13 @@ V -> "arrived" | "came" | "chuckled" | "had" | "lit" | "said" | "sat"
 V -> "smiled" | "tell" | "were"
 """
 
-#
-#
-#
-# HOW TO AVOID "the the armchair"
-# but get "the little red armchair"
-# create new DP -> Adj NP ?????
-#
-#
-
 NONTERMINALS = """
-S -> NP VP
-NP -> N | Adj NP | Det NP | NP Conj NP | NP PP
-VP -> V | Adv VP | VP PP | VP Conj VP | V NP
-PP -> P NP
+S -> NP VP | DNP VP
+NP -> N | Adj NP | NP Conj NP | NP PP
+VP -> V | Adv VP | VP PP | VP Conj S | VP Adv
+VP -> VP Conj VP | V NP | V DNP
+DNP -> Det NP
+PP -> P NP | P DNP
 """
 
 grammar = nltk.CFG.fromstring(NONTERMINALS + TERMINALS)
@@ -78,10 +70,10 @@ def preprocess(sentence):
     """
     # any words w/o letter are excluded
     def validate(word):
-        alphabet = set(['a','b','c','d','e','f',
-        'g','h','i','j','k','l','m','n','o','p',
-        'q','r','s','t','u','v','w','x','y','z'])
-        for i in range(0,len(word)):
+        alphabet = set(['a', 'b', 'c', 'd', 'e', 'f',
+                        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+                        'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'])
+        for i in range(0, len(word)):
             if word[i] in alphabet:
                 return True
         return False
@@ -97,12 +89,6 @@ def preprocess(sentence):
     return words
 
 
-#
-#
-#
-# how to get the DET word in with the Noun Phrase Chunk
-#
-#
 def np_chunk(tree):
     """
     Return a list of all noun phrase chunks in the sentence tree.
@@ -122,6 +108,9 @@ def np_chunk(tree):
             if tree.label() == 'NP':
                 # avoid duplicates
                 phrases = set(np.unique(noun_phrases))
+                #
+                # CHECK THIS
+                #
                 if str(tree.leaves()[0]) not in phrases:
                     # if so, append noun phrase chunk
                     noun_phrases.append(tree)
@@ -129,11 +118,11 @@ def np_chunk(tree):
             # pass all subtrees through helper func
             for sub in subs:
                 get_np(sub)
-    
+
     # get all non-leaf subtrees
     for tree in list(tree.subtrees(lambda t: t.height() > 2))[1:]:
         get_np(tree)
-    
+
     # remove duplicates
     return noun_phrases
 
