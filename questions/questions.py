@@ -3,6 +3,7 @@ import sys
 import os
 import string
 import numpy as np
+nltk.download('stopwords')
 
 FILE_MATCHES = 1
 SENTENCE_MATCHES = 1
@@ -55,7 +56,7 @@ def load_files(directory):
     #
     # HOW DOES THIS WORK??????????
     #
-    #
+    # do pycodestyle
     #
     #
     # make sure it is platform independent
@@ -79,6 +80,11 @@ def tokenize(document):
     Process document by coverting all words to lowercase, and removing any
     punctuation or English stopwords.
     """
+    #
+    #
+    # DOES THIS remove stopwords the right way?
+    #
+    #
     # split sentence into tokens
     tokens = nltk.word_tokenize(document)
     # make all words lowercase
@@ -112,9 +118,13 @@ def compute_idfs(documents):
     # create dictionary with words and their idf's
     word_idf_dict = {}
     num_docs = len(documents.keys())
+    # for every doc
     for document in documents.values():
+        # for every word in that doc
         for word in document:
+            # if that word's IDF hasn't been calculated
             if word not in word_idf_dict.keys():
+                # calculate IDF
                 num = num_documents_in(word)
                 idf = np.log(num_docs / num)
                 word_idf_dict[word] = idf
@@ -143,25 +153,26 @@ def top_files(query, files, idfs, n):
         score_dict[file] = 0
         # iterate through every word in the query
         for word in query:
-            # if the word is in the doc
+            # if the word is in this file's document
             if word in set(files[file]):
                 # find number of appearances
                 count = count_word(word, files[file])
                 # add tf-idf value to that file's score
                 score_dict[file] += count * idfs[word]
+
     top_files = []
     # iterate for the number of desired top files
-    for i in range(n):
+    for _ in range(n):
         keys = []
         values = []
         # add each key/value pair to lists
-        for key, value in score_dict.iteritems():
+        for key, value in score_dict.items():
             keys.append(key)
             values.append(value)
         # return key value based off index of max value
         highest_key = keys[values.index(max(values))]
         top_files.append(highest_key)
-        del top_files[highest_key]
+        del score_dict[highest_key]
     return top_files
 
 def top_sentences(query, sentences, idfs, n):
@@ -174,7 +185,7 @@ def top_sentences(query, sentences, idfs, n):
     """
     # tracks sum of IDF's
     score_dict = {}
-    # tracks how many query words occur in sentence
+    # tracks how many query words occur (breaks ties)
     count_dict = {}
     # iterate through every file
     for sentence in sentences.keys():
@@ -192,11 +203,11 @@ def top_sentences(query, sentences, idfs, n):
     # score_dict has idf summed values of all word matches
     top_files = []
     # iterate for the number of desired top files
-    for i in range(n):
+    for _ in range(n):
         keys = []
         values = []
         # add each key/value pair to lists
-        for key, value in score_dict.iteritems():
+        for key, value in score_dict.items():
             keys.append(key)
             values.append(value)
         # find max (or ties of the max)
@@ -215,12 +226,14 @@ def top_sentences(query, sentences, idfs, n):
                 key = keys[index]
                 prop = count_dict[key] / len(sentences[key])
                 proportion_dict[key] = prop
-        # proportion_dict now has query term densities of tied keys (sent's)
-        max_val = max(proportion_dict.values())
-        highest_ranked_sentence = None
-        for sent in proportion_dict.keys():
-            if proportion_dict[sent] == max_val:
-                highest_ranked_sentence = sent
+            # proportion_dict now has query term densities of tied keys (sent's)
+            max_val = np.max(list(proportion_dict.values()))
+            highest_ranked_sentence = "Error"
+            for sent in proportion_dict.keys():
+                if proportion_dict[sent] == max_val:
+                    highest_ranked_sentence = sent
+        else:
+            highest_ranked_sentence = keys[max_val_indexes]
         # add highest ranked sentence (key)
         top_files.append(highest_ranked_sentence)
         # delete it so no duplicates occur
