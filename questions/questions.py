@@ -3,7 +3,6 @@ import sys
 import os
 import string
 import numpy as np
-nltk.download('stopwords')
 
 FILE_MATCHES = 1
 SENTENCE_MATCHES = 1
@@ -53,12 +52,7 @@ def load_files(directory):
     `.txt` file inside that directory to the file's contents as a string.
     """
     file_dict = {}
-    #
-    # HOW DOES THIS WORK??????????
-    #
-    # do pycodestyle
-    #
-    #
+
     # make sure it is platform independent
     data_dir = directory.replace('/', os.sep)
     data_dir = directory.replace('\\', os.sep)
@@ -80,11 +74,6 @@ def tokenize(document):
     Process document by coverting all words to lowercase, and removing any
     punctuation or English stopwords.
     """
-    #
-    #
-    # DOES THIS remove stopwords the right way?
-    #
-    #
     # split sentence into tokens
     tokens = nltk.word_tokenize(document)
     # make all words lowercase
@@ -111,6 +100,7 @@ def compute_idfs(documents):
     # helper func to count num documents a word is in
     def num_documents_in(word):
         count = 0
+        # for every document, check the word is in it
         for document in documents.values():
             if word in set(document):
                 count += 1
@@ -172,8 +162,10 @@ def top_files(query, files, idfs, n):
         # return key value based off index of max value
         highest_key = keys[values.index(max(values))]
         top_files.append(highest_key)
+        # avoid duplicates
         del score_dict[highest_key]
     return top_files
+
 
 def top_sentences(query, sentences, idfs, n):
     """
@@ -201,7 +193,7 @@ def top_sentences(query, sentences, idfs, n):
                 count_dict[sentence] += 1
 
     # score_dict has idf summed values of all word matches
-    top_files = []
+    top_sentences = []
     # iterate for the number of desired top files
     for _ in range(n):
         keys = []
@@ -213,32 +205,35 @@ def top_sentences(query, sentences, idfs, n):
         # find max (or ties of the max)
         max = -1
         max_val_indexes = []
-        for val in values:
+        # track index for max value
+        for index, val in enumerate(values):
             if val == max:
-                max_val_indexes.append(values.index(val))
+                max_val_indexes.append(index)
             elif val > max:
-                max_val_indexes = [values.index(val)]
+                max_val_indexes = [index]
                 max = val
         # if it's a tie
         if len(max_val_indexes) > 1:
             proportion_dict = {}
-            for index in max_val_indexes: 
+            # create a dict that has query term densities
+            for index in max_val_indexes:
                 key = keys[index]
                 prop = count_dict[key] / len(sentences[key])
                 proportion_dict[key] = prop
-            # proportion_dict now has query term densities of tied keys (sent's)
+            # proportion_dict has query term densities of tied keys
             max_val = np.max(list(proportion_dict.values()))
             highest_ranked_sentence = "Error"
+            # find highest query term density
             for sent in proportion_dict.keys():
                 if proportion_dict[sent] == max_val:
                     highest_ranked_sentence = sent
         else:
-            highest_ranked_sentence = keys[max_val_indexes]
+            highest_ranked_sentence = keys[max_val_indexes[0]]
         # add highest ranked sentence (key)
-        top_files.append(highest_ranked_sentence)
+        top_sentences.append(highest_ranked_sentence)
         # delete it so no duplicates occur
         del score_dict[highest_ranked_sentence]
-    return top_files
+    return top_sentences
 
 
 if __name__ == "__main__":
